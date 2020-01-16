@@ -32,13 +32,23 @@ class Blockchain(object):
 
         block = {
             # TODO
+            'index': len(self.chain) + 1,
+            'timestamp': time(),
+            'transactions': self.current_transactions,
+            'proof': proof,
+            'previous_hash': previous_hash
         }
 
         # Reset the current list of transactions
-        # Append the chain to the block
-        # Return the new block
-        pass
+        self.current_transactions = []
 
+        # Append the chain to the block
+        self.chain.append(block)
+
+        # Return the new block
+        return block
+
+    @staticmethod
     def hash(block):
         """
         Creates a SHA-256 hash of a Block
@@ -56,8 +66,10 @@ class Blockchain(object):
         # or we'll have inconsistent hashes
 
         # TODO: Create the block_string
+        byteslike = json.dumps(block).encode()
 
         # TODO: Hash this string using sha256
+        raw_hash = hashlib.sha256(byteslike)
 
         # By itself, the sha256 function returns the hash in a raw string
         # that will likely include escaped characters.
@@ -66,23 +78,11 @@ class Blockchain(object):
         # easier to work with and understand
 
         # TODO: Return the hashed block string in hexadecimal format
-        pass
+        hex_hash = raw_hash.hexdigest()
 
     @property
     def last_block(self):
         return self.chain[-1]
-
-    def proof_of_work(self, block):
-        """
-        Simple Proof of Work Algorithm
-        Stringify the block and look for a proof.
-        Loop through possibilities, checking each one against `valid_proof`
-        in an effort to find a number that is a valid proof
-        :return: A valid proof for the provided block
-        """
-        # TODO
-        pass
-        # return proof
 
     @staticmethod
     def valid_proof(block_string, proof):
@@ -97,8 +97,9 @@ class Blockchain(object):
         :return: True if the resulting hash is a valid proof, False otherwise
         """
         # TODO
-        pass
-        # return True or False
+        maybe_valid = f'{block_string}{proof}'.encode()
+        hashed = hashlib.sha256(maybe_valid).hexdigest()
+        return hashed[:3] == '000'
 
 
 # Instantiate our Node
@@ -111,27 +112,43 @@ node_identifier = str(uuid4()).replace('-', '')
 blockchain = Blockchain()
 
 
-@app.route('/mine', methods=['GET'])
+@app.route('/mine', methods=['POST'])
 def mine():
-    # Run the proof of work algorithm to get the next proof
+    data = request.get_json()
+    for required in ['proof', 'id']:
+        if required not in data:
+            return jsonify({
+                'message': f'missing required field {required}'
+                }), 400
+    proof = data['proof']
 
-    # Forge the new Block by adding it to the chain with the proof
+    if blockchain.valid_proof(json.dumps(blockchain.last_block), proof):
+        previous_hash = blockchain.hash(blockchain.last_block)
+        block = blockchain.new_block(proof, previous_hash)
 
-    response = {
-        # TODO: Send a JSON response with the new block
-    }
+        response = {
+            # TODO: Send a JSON response with the new block
+            'new_block': block
+        }
 
-    return jsonify(response), 200
+        return jsonify(response), 200
+    else:
+        return jsonify({'message': 'invalid proof'}), 200
 
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
     response = {
         # TODO: Return the chain and its current length
+        'length': len(blockchain.chain),
+        'chain': blockchain.chain
     }
     return jsonify(response), 200
 
+@app.route('/last_block', methods=['GET'])
+def last_block():
+    return jsonify(blockchain.last_block)
 
 # Run the program on port 5000
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='localhost', port=5000, debug=True)
