@@ -116,9 +116,7 @@ blockchain = Blockchain()
 
 @app.route('/mine', methods=['POST'])
 def mine():
-    # print('last block', blockchain.last_block)
     data = request.get_json()
-    # print('data', data)
     for required in ['proof', 'id']:
         if required not in data:
             return jsonify({
@@ -129,7 +127,6 @@ def mine():
     block_string = json.dumps(blockchain.last_block, sort_keys=True)
     if blockchain.valid_proof(block_string, proof):
         previous_hash = blockchain.hash(blockchain.last_block)
-        print('about to make a block')
         block = blockchain.new_block(proof, previous_hash)
 
         response = {

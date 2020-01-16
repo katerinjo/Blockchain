@@ -33,7 +33,6 @@ def valid_proof(block_string, proof):
     """
     maybe_valid = f'{block_string}{proof}'.encode()
     hashed = hashlib.sha256(maybe_valid).hexdigest()
-    if hashed[:5] == '00000': print(hashed)
     return hashed[:6] == '000000'
 
 
@@ -70,7 +69,6 @@ if __name__ == '__main__':
         # new_proof = ???
         block = data['block']
         new_proof = proof_of_work(block)
-        print(new_proof)
 
         # When found, POST it to the server {"proof": new_proof, "id": id}
         post_data = {"proof": new_proof, "id": id}
