@@ -112,7 +112,7 @@ class Blockchain(object):
             'recipient': recipient,
             'amount': amount
         })
-        return len(self.current_transactions) - 1
+        return len(self.chain) + 1
 
 
 # Instantiate our Node
